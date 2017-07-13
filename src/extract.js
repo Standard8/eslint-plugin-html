@@ -10,6 +10,7 @@ function iterateScripts(code, options, onChunk) {
   const isJavaScriptMIMEType = options.isJavaScriptMIMEType || (() => true)
   let index = 0
   let inScript = false
+  let scriptIsModule = false
   let cdata = []
 
   const chunks = []
@@ -32,6 +33,7 @@ function iterateScripts(code, options, onChunk) {
         }
 
         inScript = true
+        scriptIsModule = attrs.type === "module"
         pushChunk("html", parser.endIndex + 1)
       },
 
@@ -61,7 +63,7 @@ function iterateScripts(code, options, onChunk) {
           return
         }
 
-        pushChunk("script", parser.startIndex)
+        pushChunk(scriptIsModule ? "module" : "script", parser.startIndex)
       },
 
       ontext() {
@@ -69,7 +71,7 @@ function iterateScripts(code, options, onChunk) {
           return
         }
 
-        pushChunk("script", parser.endIndex + 1)
+        pushChunk(scriptIsModule ? "module" : "script", parser.endIndex + 1)
       },
     },
     {
@@ -188,7 +190,8 @@ function extract(code, indentDescriptor, xmlMode, isJavaScriptMIMEType) {
       if (match) lineNumber += match.length
       previousHTML = slice
     }
-    else if (chunk.type === "script") {
+    else if (chunk.type === "script" ||
+             chunk.type === "module") {
       const transformedCode = new TransformableString(code)
       let indentSlice = slice
       for (const cdata of chunk.cdata) {
