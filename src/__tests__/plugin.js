@@ -642,3 +642,61 @@ it("should report correct eol-last message position", () => {
     expect(messages[0].column).toBe(12)
   }
 })
+
+describe("multiple scripts sharing globals", () => {
+  it("should not error with no-undef when a global is shared between script tags", () => {
+    const messages = execute("globals.html", {
+      rules: {
+        "no-undef": "error",
+        "no-console": "off",
+      },
+    })
+
+    expect(messages.length).toBe(0)
+  })
+
+  it("should not error with no-used-vars when a global is shared between script tags", () => {
+    const messages = execute("globals.html", {
+      rules: {
+        "no-unused-vars": "error",
+        "no-console": "off",
+      },
+    })
+
+    expect(messages.length).toBe(0)
+  })
+
+  it("should error with no-undef when a global is attempted to be used outside of a module", () => {
+    const messages = execute("modules.html", {
+      rules: {
+        "no-undef": "error",
+        "no-console": "off",
+      },
+    })
+
+    expect(messages.length).toBe(1)
+
+    expect(messages[0].ruleId).toBe("no-undef")
+    expect(messages[0].message).toMatch(
+      /'a' is not defined\./
+    )
+    expect(messages[0].line).toBe(19)
+  })
+
+  it("should error with no-used-vars when variable is not used within a module section", () => {
+    const messages = execute("modules.html", {
+      rules: {
+        "no-unused-vars": "error",
+        "no-console": "off",
+      },
+    })
+
+    expect(messages.length).toBe(1)
+
+    expect(messages[0].ruleId).toBe("no-unused-vars")
+    expect(messages[0].message).toMatch(
+      /'b' is assigned a value but never used\./
+    )
+    expect(messages[0].line).toBe(16)
+  })
+})
